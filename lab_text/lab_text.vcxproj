@@ -115,8 +115,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="stack.h" />
     <ClInclude Include="TText.h" />
     <ClInclude Include="TTextLink.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="TText.cpp" />
+    <ClCompile Include="TTextLink.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
