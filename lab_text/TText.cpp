@@ -1,232 +1,110 @@
 #include "TText.h"
-void TText::goNextLink() 
-{
-	if (!pCurr->getPNext()) return;
-	stack.push(pCurr);
-	pCurr = pCurr->getPNext();
-}
-void TText::goPrevLink() 
-{
-	if (stack.isEmpty()) return;
-	pCurr = stack.pop();
-}
-void TText::goDownLink() 
-{
-	if (!pCurr->getPDown()) return;
-	stack.push(pCurr);
-	pCurr = pCurr->getPDown();
-}
-void TText::addNextLine(char *s) 
-{
-	TLink *tmp = new TLink(s, pCurr->getPNext(), nullptr);
-	pCurr->setPNext(tmp);
-	pCurr = pCurr->getPNext();
-}
-void TText::addNextSection(char *s) 
-{
-	TLink *tmp = new TLink(s, nullptr, nullptr);
-	if (pCurr->getPDown() != NULL) 
-	{
-		TLink *tmp1 = pCurr->getPDown();
-		pCurr->setPDown(tmp);
-		pCurr = pCurr->getPDown();
-		pCurr->setPNext(tmp1);
-		return;
-	}
-	pCurr->setPDown(tmp);
-	//pCurr->setPNext()
-	pCurr = pCurr->getPDown();
-}
-void TText::delNextLink() 
-{
-	delete pCurr->getPNext();
-	pCurr->setPNext(NULL);
-	// goPrevLink();
-	 /*
-	 if (pCurr)
-		 if (pCurr->getPNext()) 
-		 {
-			 if (pCurr->getPNext()->getPDown()) 
-			 {
-				 delstack.push(pCurr);
-				 goNextLink();
-				 delDownLink();
-				 pCurr = delstack.pop();
-			 }
-			 if (pCurr->getPNext()->getPNext()) 
-			 {
-				 TLink *tmp = pCurr->getPNext()->getPNext();
-				 delstack.push(pCurr);
-				 goNextLink();
-				 delete pCurr;
-				 pCurr = delstack.pop();
-				 pCurr->setPNext(tmp);
-			 }
-			 else { delstack.push(pCurr); goNextLink();  delete pCurr; pCurr = delstack.pop(); pCurr->setPNext(nullptr); 
-			 }
-		 }
-		 //else { delete pCurr; goPrevLink(); pCurr->setPNext(nullptr); 
-		 } */
-}
-void TText::delDownLink() {
-	delete pCurr->getPDown();
-	pCurr->setPDown(NULL);
-	/*
-	if (pCurr)
-		if (pCurr->getPDown()) 
-		{
-			delstack.push(pCurr);
-			goDownLink();
-			for (; pCurr->getPNext(); ) 
-			{
-				delNextLink();
-			}
-			//goPrevLink();
-			pCurr = delstack.pop();
-			delete pCurr->getPDown();
+#include <string>
+#include <iostream>
+#include <fstream>
+#include <conio.h>
+#include <Windows.h>
 
-		}
-			*/
-}
-char* TText::getLine() 
+using namespace std;
+
+void gotoxy(int x, int y)
 {
-	return pCurr->getStr();
+	HANDLE Console = GetStdHandle(STD_OUTPUT_HANDLE);
+	if (!Console)return;
+
+	COORD pos;
+	pos.X = x;
+	pos.Y = y;
+
+	SetConsoleCursorPosition(Console, pos);
 }
 
-void TText::setLine(char* tmp) 
+void clrscr(void)
 {
-	strcpy(pCurr->getStr(), tmp);
+	HANDLE Console = GetStdHandle(STD_OUTPUT_HANDLE);
+	if (!Console) return;
+
+	CONSOLE_SCREEN_BUFFER_INFO buf;
+	GetConsoleScreenBufferInfo(Console, &buf);
+
+	DWORD Count;
+
+	COORD zpos;
+	zpos.X = 0;
+	zpos.Y = 0;
+
+	FillConsoleOutputCharacter(Console, ' ', buf.dwSize.X * buf.dwSize.Y, zpos, &Count);
+	SetConsoleCursorPosition(Console, zpos);
 }
 
-TLink* TText::recursionRead(ifstream& file) 
+void clreol(void)
 {
-	char buf[80];
-	TLink *tmp, *firstTmp = NULL;
-	while (!file.eof()) {
-		file.getline(buf, 80, '\n');
-		if (buf[0] == '}')
-			break;
-		else {
-			if (buf[0] == '{')
-				tmp->setPDown(recursionRead(file));
-			else {
-				if (!firstTmp) {
-					firstTmp = new TLink(buf);
-					tmp = firstTmp;
-				}
-				else {
-					tmp->setPNext(new TLink(buf));
-					tmp = tmp->getPNext();
-				}
-			}
-		}
-	}
-	return firstTmp;
-}
+	HANDLE Console = GetStdHandle(STD_OUTPUT_HANDLE);
+	if (!Console)return;
 
-void TText::Read(char *fn) 
-{
-	ifstream ifs(fn);
-	pFirst = recursionRead(ifs);
-}
+	CONSOLE_SCREEN_BUFFER_INFO buf;
+	GetConsoleScreenBufferInfo(Console, &buf);
 
+	WORD Attr;
+	DWORD Count;
 
-void TText::printText(TLink* tmp) 
-{
-	if (tmp) {
-		for (int i = 0; i < level; i++)
-			cout << " ";
-		cout << tmp->getStr() << endl;
-		level++;
-		printText(tmp->getPDown());
-		level--;
-		printText(tmp->getPNext());
-	}
-}
+	COORD zpos = buf.dwCursorPosition;
 
+	zpos.X = buf.dwCursorPosition.X + 1;
+	zpos.Y = buf.dwCursorPosition.Y;
 
-void TText::print() 
-{
-	level = 0;
-	printText(pFirst);
-}
-
-
-void TText::saveText(TLink* tmp, ofstream& f) 
-{
-	f << tmp->getStr() << endl;
-	if (tmp->getPDown()) {
-		f << "{\n";
-		saveText(tmp->getPDown(), f);
-		f << "}\n";
-	}
-	if (tmp->getPNext())
-		saveText(tmp->getPNext(), f);
-}
-
-
-void TText::save(char* fn) 
-{
-	ofstream ofs(fn);
-	saveText(pFirst, ofs);
+	FillConsoleOutputCharacter(Console, ' ', buf.dwSize.X - buf.dwCursorPosition.X - 1, zpos, &Count);
+	SetConsoleCursorPosition(Console, buf.dwCursorPosition);
 }
 
 
 
-TLink* TText::CopyRecursion(TLink *tmp) 
+TText::TText(TTextLink *p)
 {
-	TLink *pN = NULL, *pD = NULL;
-	if (tmp->getPDown())
-		pD = CopyRecursion(tmp->getPDown());
-	if (tmp->getPNext())
-		pN = CopyRecursion(tmp->getPNext());
-	TLink *unit = new TLink(tmp->getStr(), pN, pD);
-	return unit;
-}
-
-TLink* TText::Copy() 
-{
-	return CopyRecursion(pFirst);
-}
-
-
-void TText::Reset() 
-{
+	if (p != NULL)pFirst = p;
+	else pFirst = new TTextLink();
 	pCurr = pFirst;
-	stack.clear();
-	stack.push(pCurr);
-	if (pFirst->getPDown())
-		stack.push(pFirst->getPDown());
-	if (pFirst->getPNext())
-		stack.push(pFirst->getPNext());
 }
 
-
-bool TText::IsEnd() 
-{
-	return stack.isEmpty();
-}
-
-void TText::GoNext() 
-{
-	pCurr = stack.pop();
-	if (pCurr != pFirst) 
+void TText::GoNextLink() {
+	if (pCurr != NULL)
 	{
-		if (pCurr->getPDown())
-			stack.push(pCurr->getPDown());
-		if (pCurr->getPNext())
-			stack.push(pCurr->getPNext());
+		if (pCurr->pNext != NULL)
+		{
+			steck.Push(pCurr);
+			pCurr = pCurr->pNext;
+		}
 	}
+	else throw(-1);
 }
-int TText::DownCount() 
-{
-	if (!pCurr->getPDown()) return 1;
-	TLink *tmp = pCurr;
-	int k = 0;
-	stack.clear();
-	stack.push(pCurr = pCurr->getPDown());
-	for (; !IsEnd(); GoNext())
-		k++;
-	pCurr = tmp;
-	return k + 1;
+
+void TText::GoDownLink() {
+	if (pCurr != NULL)
+	{
+		if (pCurr->pNext != NULL)
+		{
+			steck.Push(pCurr);
+			pCurr = pCurr->pDown;
+		}
+	}
+	else throw(-1);
+}
+
+void TText::GoPrevLink() {
+	if (!steck.IsEmpty())
+		pCurr = steck.Pop();
+}
+
+void TText::GoFirstLink() {
+	steck.clear();
+	pCurr = pFirst;
+}
+
+string TText::GetStr() {
+	if (pCurr == NULL)return string(" ");
+	else return string(pCurr->str);
+}
+
+void TText::SetStr(string &s) {
+	if (pCurr != NULL)strcpy(pCurr->str, s.c_str());
 }
